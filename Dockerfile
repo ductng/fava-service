@@ -1,17 +1,19 @@
-ARG BEANCOUNT_VERSION=2.3.5
-ARG FAVA_VERSION=v1.23.1
+ARG BEANCOUNT_VERSION=2.3.6
+ARG FAVA_VERSION=v1.29
 
 ## Node build environment:
 ## Build a custom Fava
 ############################
-ARG NODE_BUILD_IMAGE=16-bullseye
-FROM node:${NODE_BUILD_IMAGE} as node_build_env
+ARG NODE_BUILD_IMAGE=23-bookworm-slim
+FROM node:${NODE_BUILD_IMAGE} AS node_build_env
 ARG FAVA_VERSION
 
 WORKDIR /tmp/build
 
 # Install dependencies
 RUN apt-get update && \
+    apt-get install -y git && \
+    apt-get install -y gcc make npm build-essential && \
     apt-get install -y python3-babel
 
 # Build Fava from source code with custom style.css
@@ -34,16 +36,16 @@ RUN cd ./fava && \
 ## Application build environment:
 ## Used to build the final image
 ###################################
-FROM debian:bullseye as build_env
+FROM debian:bookworm AS build_env
 ARG BEANCOUNT_VERSION
 
 # Install dependencies
 RUN apt-get update &&\ 
     apt-get install -y \ 
-    build-essential libxml2-dev libxslt-dev curl python3 libpython3-dev python3-pip git python3-venv
+    git build-essential libxml2-dev libxslt-dev curl python3 libpython3-dev python3-pip git python3-venv
 
 # Setup the application as a Python Virtual Environment
-ENV PATH "/app/bin:$PATH"
+ENV PATH="/app/bin:$PATH"
 RUN python3 -m venv /app
 
 # Collect pre-built Fava and dependencies list
@@ -70,7 +72,7 @@ RUN find /app -name __pycache__ -exec rm -rf -v {} +
 ## - LEDGER_GIT: Remote address of the ledger repository
 ## - BEAN_FILE: Path to the main Beancount file in the repository (e.g. ledger/my_finances.bean)
 ###############################
-FROM python:3.9-slim-bullseye
+FROM python:3.13-slim-bookworm
 
 # Copy the application from the build environment
 COPY --from=build_env /app /app
@@ -96,7 +98,7 @@ RUN chmod +x /app/pull_ledger.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Add the application to the PATH
-ENV PATH "/app/bin:$PATH"
+ENV PATH="/app/bin:$PATH"
 
 # Setup the cron job, runs every hour
 RUN (echo "0 * * * * /app/pull_ledger.sh >> /app/pull_ledger.log 2>&1") | crontab -
