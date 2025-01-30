@@ -4,7 +4,7 @@ ARG FAVA_VERSION=v1.29
 ## Node build environment:
 ## Build a custom Fava
 ############################
-ARG NODE_BUILD_IMAGE=23-bookworm-slim
+ARG NODE_BUILD_IMAGE=23-bookworm
 FROM node:${NODE_BUILD_IMAGE} AS node_build_env
 ARG FAVA_VERSION
 
@@ -72,7 +72,7 @@ RUN find /app -name __pycache__ -exec rm -rf -v {} +
 ## - LEDGER_GIT: Remote address of the ledger repository
 ## - BEAN_FILE: Path to the main Beancount file in the repository (e.g. ledger/my_finances.bean)
 ###############################
-FROM python:3.13-slim-bookworm
+FROM python:3.13-bookworm
 
 # Copy the application from the build environment
 COPY --from=build_env /app /app
@@ -110,6 +110,6 @@ EXPOSE 5000
 # ENV FAVA_HOST "0.0.0.0"
 
 # TODO: Remove this once the fava issue is fixed
-RUN ln -s /usr/local/bin/python3 /usr/bin/python3
+#RUN ln -s /usr/local/bin/python3 /usr/bin/python3
 
 ENTRYPOINT ["/app/entrypoint.sh"]

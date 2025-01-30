@@ -13,7 +13,7 @@ services:
     image: fava-service:latest
     container_name: fava
     ports:
-      - 80:80
+      - 8192:80
     secrets:
       - ledger_git
     configs:
